@@ -17,7 +17,7 @@ TLSA records enhance security by allowing domain owners to specify which TLS cer
 
 ## Prerequisites
 
-- Python 3.6+
+- Python 3.7+
 - Cloudflare account with API token
 - Let's Encrypt certificate managed by Certbot
 

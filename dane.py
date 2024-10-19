@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import time
-import subprocess
-import CloudFlare
+from cloudflare import Cloudflare
 import OpenSSL
 import hashlib
 import argparse
@@ -34,10 +32,10 @@ def get_certificate_hash(cert_path: str) -> str:
     pubkey = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, cert.get_pubkey())
     return hashlib.sha256(pubkey).hexdigest()
 
-def get_tlsa_records(cf: CloudFlare.CloudFlare, zone_id: str) -> List[dict]:
+def get_tlsa_records(cf: Cloudflare, zone_id: str) -> List[dict]:
     return cf.zones.dns_records.get(zone_id, params={"type": "TLSA", "per_page": 100})
 
-def create_tlsa_record(cf: CloudFlare.CloudFlare, zone_id: str, name: str, content: str, certificate_hash: str) -> dict:
+def create_tlsa_record(cf: Cloudflare, zone_id: str, name: str, content: str, certificate_hash: str) -> dict:
     data = {
         "type": "TLSA",
         "name": name,
@@ -52,7 +50,7 @@ def create_tlsa_record(cf: CloudFlare.CloudFlare, zone_id: str, name: str, conte
     }
     return cf.zones.dns_records.post(zone_id, data=data)
 
-def delete_tlsa_record(cf: CloudFlare.CloudFlare, zone_id: str, record_id: str) -> dict:
+def delete_tlsa_record(cf: Cloudflare, zone_id: str, record_id: str) -> dict:
     return cf.zones.dns_records.delete(zone_id, record_id)
 
 def main():
@@ -75,7 +73,7 @@ def main():
     if not api_token:
         raise Exception("Cloudflare API token not found in config file")
 
-    cf = CloudFlare.CloudFlare(token=api_token)
+    cf = Cloudflare(token=api_token)
     
     # Get zone ID
     zones = cf.zones.get(params={"name": zone_name})
@@ -111,9 +109,6 @@ def main():
     
     print(f"Sleeping for {sleep_time} seconds to allow DNS propagation")
     time.sleep(sleep_time)
-    
-    # print("Reloading services")
-    # subprocess.run(["systemctl", "reload", "postfix", "dovecot", "nginx"])
     
     print("Done!")
 
