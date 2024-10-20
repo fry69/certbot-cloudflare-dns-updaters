@@ -122,6 +122,39 @@ If neither `--email` nor `--url` is specified, any existing TLSRPT record will b
    python mta-sts.py example.com example.org --email reports@example.com --url //reporting.example.com/v1/tlsrpt
    ```
 
+## Example Cloudflare MTA-STS worker
+
+This example worker for Cloudflare serves the policy data directly. Adapt the `reply` variable to your needs and add this worker to each domain as a custom subdomain `mta-sts.<your_domain>`.
+
+```ts
+export default {
+	async fetch(request, env, ctx) {
+		const url = new URL(request.url);
+		const path = url.pathname;
+
+		// Define the allowed paths
+		const allowedPaths = ['/.well-known/mta-sts.txt'];
+
+		// Check if the path is allowed
+		if (allowedPaths.includes(path)) {
+			let reply = 'version: STSv1\n';
+			reply += 'mode: enforce\n';
+			reply += 'mx: mx1.example.com\n';
+			reply += 'mx: mx2.example.com\n';
+			reply += 'max_age: 604800\n';
+			return new Response(reply, {
+				headers: {
+					"content-type": "text/plain",
+				},
+			});
+		} else {
+			// Serve a 404 response
+			return new Response('Not Found', { status: 404 });
+		}
+	},
+};
+```
+
 ## Verification
 
 After updating DNS records, you can verify them using these online tools:
